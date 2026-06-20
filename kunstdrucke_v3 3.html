@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kunstdrucke</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #222; padding: 1rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 1rem; }
+.search { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; margin-bottom: 1rem; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.card:hover { border-color: #378ADD; box-shadow: 0 2px 8px rgba(55,138,221,0.15); }
+.card.selected { border: 2px solid #378ADD; }
+.card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #eee; }
+.card-label { padding: 6px 8px 2px; font-size: 12px; font-weight: 500; }
+.card-price { padding: 0 8px 8px; font-size: 11px; color: #888; }
+.order-panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; display: none; }
+.order-panel.visible { display: block; }
+.order-panel h2 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; }
+.selected-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.selected-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+.sel-name { font-weight: 500; font-size: 15px; }
+.price-tag { font-size: 20px; font-weight: 500; color: #378ADD; margin-top: 4px; }
+.field { margin-bottom: 0.75rem; }
+.field label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+.field select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; }
+.btn { background: #378ADD; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 0.75rem; }
+.btn:hover { background: #185FA5; }
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #2e7d32; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+<h1>Kunstdrucke</h1>
+<input class="search" type="search" placeholder="Bild suchen (z.B. Bild 12)..." oninput="filterGallery(this.value)" />
+<div class="gallery" id="gallery"></div>
+
+<div class="order-panel" id="orderPanel">
+  <h2>Format & Preis auswählen</h2>
+  <div class="selected-preview">
+    <img id="selImg" src="" alt="" />
+    <div>
+      <div class="sel-name" id="selName"></div>
+      <div class="price-tag" id="priceDisplay">EUR 45</div>
+    </div>
+  </div>
+  <div class="field">
+    <label>Format auswählen</label>
+    <select id="formatSelect" onchange="updatePrice()">
+      <option value="45" data-format="15×20 cm">15×20 cm — EUR 45</option>
+      <option value="60" data-format="30×40 cm">30×40 cm — EUR 60</option>
+      <option value="100" data-format="60×80 cm">60×80 cm — EUR 100</option>
+    </select>
+  </div>
+  <button class="btn" onclick="addToCart()">🛒 In den Warenkorb</button>
+</div>
+
+<div class="toast" id="toast">✓ In den Warenkorb gelegt!</div>
+
+<script>
+// Bild 1 = Page 6, Bild 2 = Page 7, ..., Bild 93 = Page 98
+// Exakte URLs in Navigationsreihenfolge der App-Seiten
+const bilder = [
+  { name: "Bild 1",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0071.6a319f3a7d316.04147341.jpeg" },
+  { name: "Bild 2",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0061.6a319a9b6c8fb3.31396421.jpeg" },
+  { name: "Bild 3",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0072.6a319affa70066.25223346.jpeg" },
+  { name: "Bild 4",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0119.6a319b68ab26c6.53012199.jpeg" },
+  { name: "Bild 5",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0118.6a319bf0a03955.15932110.jpeg" },
+  { name: "Bild 6",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0134.6a319cb2475598.58774319.jpeg" },
+  { name: "Bild 7",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0117.6a31b146e4c9b8.86151282.jpeg" },
+  { name: "Bild 8",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0116.6a31b19a89e8b3.64300387.jpeg" },
+  { name: "Bild 9",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0093.6a31b209a79c46.32025995.jpeg" },
+  { name: "Bild 10", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0172.6a31b2c4e72fa7.30169012.jpeg" },
+  { name: "Bild 11", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0161.6a31b3406a1919.36067854.jpeg" },
+  { name: "Bild 12", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0164.6a31b3a6101492.74180443.jpeg" },
+  { name: "Bild 13", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0160.6a31b3f6e45e81.49224402.jpeg" },
+  { name: "Bild 14", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0159.6a31b44f9474d0.86766225.jpeg" },
+  { name: "Bild 15", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0163.6a31b4a20aed99.57032442.jpeg" },
+  { name: "Bild 16", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0165.6a31b4f5d4f252.96211630.jpeg" },
+  { name: "Bild 17", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0157.6a31b53cbc15d8.86973229.jpeg" },
+  { name: "Bild 18", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0155.6a31b58e1c5522.03786229.jpeg" },
+  { name: "Bild 19", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0122.6a31b5d5d1aab1.61770064.jpeg" },
+  { name: "Bild 20", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0121.6a339705e70b77.80776834.jpeg" },
+  { name: "Bild 21", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0120.6a339785af3593.68917884.jpeg" },
+  { name: "Bild 22", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0085.6a3397dd7bb830.67420226.jpeg" },
+  { name: "Bild 23", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0059.6a33983e90a116.29877685.jpeg" },
+  { name: "Bild 24", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0125.6a33988e682530.64013020.jpeg" },
+  { name: "Bild 25", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0124.6a3398ef905e15.75394332.jpeg" },
+  { name: "Bild 26", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0128.6a339a5f485181.51367104.jpeg" },
+  { name: "Bild 27", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0127.6a33998788b954.06518980.jpeg" },
+  { name: "Bild 28", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0154.6a3399d7cfe849.82562591.jpeg" },
+  { name: "Bild 29", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0106.6a339a18168b48.44449561.jpeg" },
+  { name: "Bild 30", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0128.6a339a5f485181.51367104.jpeg" },
+  { name: "Bild 31", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0099.6a339b02149522.02306628.jpeg" },
+  { name: "Bild 32", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0130.6a339b507c8008.56773202.jpeg" },
+  { name: "Bild 33", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0138.6a339b940cf5e3.70301149.jpeg" },
+  { name: "Bild 34", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0136.6a339bf6074492.45213871.jpeg" },
+  { name: "Bild 35", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0067.6a339c47026dd0.17260041.jpeg" },
+  { name: "Bild 36", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0060.6a339c92c3ccb0.33432903.jpeg" },
+  { name: "Bild 37", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0151.6a339ccfa30205.05152918.jpeg" },
+  { name: "Bild 38", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0066.6a339d306192b1.92154337.jpeg" },
+  { name: "Bild 39", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0065.6a339d95084454.64598940.jpeg" },
+  { name: "Bild 40", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0087.6a339ddd9e8a14.53974908.jpeg" },
+  { name: "Bild 41", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0143.6a339e3b2a7f97.91005549.jpeg" },
+  { name: "Bild 42", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0142.6a339e705fb996.11019959.jpeg" },
+  { name: "Bild 43", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0148.6a339eefe49af0.33345191.jpeg" },
+  { name: "Bild 44", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0147.6a339f2b6f6d87.21664070.jpeg" },
+  { name: "Bild 45", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0146.6a339f6f64f410.85547856.jpeg" },
+  { name: "Bild 46", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0145.6a339fb932f174.80653533.jpeg" },
+  { name: "Bild 47", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0144.6a33a006d5b0f6.95340464.jpeg" },
+  { name: "Bild 48", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0133.6a33a04451ec95.26401042.jpeg" },
+  { name: "Bild 49", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0058.6a33a092ae3be4.89353812.jpeg" },
+  { name: "Bild 50", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0083.6a33a0ffde2d57.59092932.jpeg" },
+  { name: "Bild 51", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0177.6a33a15e3657b1.97638799.jpeg" },
+  { name: "Bild 52", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0064.6a33a1bd4eb181.64860996.jpeg" },
+  { name: "Bild 53", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0126.6a33a204875a01.35868965.jpeg" },
+  { name: "Bild 54", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0051.6a33a2418eadd3.08930049.jpeg" },
+  { name: "Bild 55", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0084.6a33a289bdd2b1.47533750.jpeg" },
+  { name: "Bild 56", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0069.6a33a33c1da0b9.61351609.jpeg" },
+  { name: "Bild 57", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0115.6a33a38d9d7a28.85574931.jpeg" },
+  { name: "Bild 58", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0131.6a33a3cd1c5364.42191159.jpeg" },
+  { name: "Bild 59", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0139.6a33a40a329ca7.44180341.jpeg" },
+  { name: "Bild 60", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0173.6a33a4423833f5.97937938.jpeg" },
+  { name: "Bild 61", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0176.6a33a49bc42bd4.49525729.jpeg" },
+  { name: "Bild 62", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0175.6a33a4e2138d65.46606483.jpeg" },
+  { name: "Bild 63", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0174.6a33a51a6ade70.77544563.jpeg" },
+  { name: "Bild 64", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0068.6a33a551cfa7f5.49065615.jpeg" },
+  { name: "Bild 65", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0135.6a33a5afa8e095.18596689.jpeg" },
+  { name: "Bild 66", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0110.6a33a6042995b0.96568491.jpeg" },
+  { name: "Bild 67", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0104.6a33a642a97bb9.46289264.jpeg" },
+  { name: "Bild 68", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0132.6a33a67db4d1f1.98072443.jpeg" },
+  { name: "Bild 69", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0162.6a33a6b4458527.85293871.jpeg" },
+  { name: "Bild 70", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0109.6a33a6f81496f3.96179830.jpeg" },
+  { name: "Bild 71", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0112.6a33a740a4a561.76481331.jpeg" },
+  { name: "Bild 72", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0092.6a33a78e044529.29493337.jpeg" },
+  { name: "Bild 73", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0111.6a33a7d8862f40.08595397.jpeg" },
+  { name: "Bild 74", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0113.6a33a83d540172.45221122.jpeg" },
+  { name: "Bild 75", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0114.6a33a8ca1e04c8.12893577.jpeg" },
+  { name: "Bild 76", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0086.6a33a908046330.66882278.jpeg" },
+  { name: "Bild 77", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0149.6a33a9a96e1747.36169159.jpeg" },
+  { name: "Bild 78", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0098.6a33a9e4a15a90.86619330.jpeg" },
+  { name: "Bild 79", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0091.6a33aa5017dff7.45424908.jpeg" },
+  { name: "Bild 80", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0573.6a33ac44133d11.79027842.jpeg" },
+  { name: "Bild 81", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 82", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0594.6a33aca28a8b28.40788264.jpeg" },
+  { name: "Bild 83", url: "https://www.jotform.com/uploads/axelemmrich/form_files/EF920B24-2EB7-492C-881A-EA132FEB14D8.6a33ad6063dcd7.20255582.jpeg" },
+  { name: "Bild 84", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0550.6a33ae1d34b469.00791064.png" },
+  { name: "Bild 85", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 86", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 87", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 88", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 89", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 90", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 91", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 92", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 93", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" }
+];
+
+let selectedIndex = -1;
+let allCards = [];
+
+function buildGallery() {
+  const g = document.getElementById('gallery');
+  bilder.forEach((b, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.name = b.name.toLowerCase();
+    card.innerHTML = `<img src="${b.url}" alt="${b.name}" loading="lazy"/><div class="card-label">${b.name}</div><div class="card-price">ab EUR 45</div>`;
+    card.onclick = () => selectBild(i, card);
+    g.appendChild(card);
+    allCards.push(card);
+  });
+}
+
+function selectBild(i, card) {
+  allCards.forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedIndex = i;
+  document.getElementById('selImg').src = bilder[i].url;
+  document.getElementById('selName').textContent = bilder[i].name;
+  document.getElementById('formatSelect').selectedIndex = 0;
+  updatePrice();
+  document.getElementById('orderPanel').classList.add('visible');
+  document.getElementById('orderPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function updatePrice() {
+  const sel = document.getElementById('formatSelect');
+  document.getElementById('priceDisplay').textContent = 'EUR ' + sel.value;
+}
+
+function filterGallery(q) {
+  q = q.toLowerCase();
+  allCards.forEach(c => { c.style.display = c.dataset.name.includes(q) ? '' : 'none'; });
+}
+
+function addToCart() {
+  if (selectedIndex < 0) return;
+  const sel = document.getElementById('formatSelect');
+  const item = {
+    name: bilder[selectedIndex].name,
+    format: sel.options[sel.selectedIndex].dataset.format,
+    preis: 'EUR ' + sel.value,
+    img: bilder[selectedIndex].url
+  };
+  let cart = JSON.parse(localStorage.getItem('jg_cart') || '[]');
+  const existing = cart.findIndex(x => x.name === item.name);
+  if (existing >= 0) cart[existing] = item; else cart.push(item);
+  localStorage.setItem('jg_cart', JSON.stringify(cart));
+  const t = document.getElementById('toast');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+buildGallery();
+</script>
+</body>
+</html>
