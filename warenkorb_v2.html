@@ -55,24 +55,32 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
   <button class="btn" onclick="submitOrder()">✉️ Verbindlich bestellen</button>
   <button class="btn-clear" onclick="clearCart()">Warenkorb leeren</button>
   <button class="btn-clear" style="margin-top:6px;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html'">← Weiter einkaufen</button>
+  <hr style="border:none;border-top:1px solid #e0e0e0;margin:1rem 0;">
+  <button class="btn-clear" style="margin-top:0;border-color:#e53935;color:#e53935;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/widerruf.html'">⚠️ Vertrag widerrufen</button>
+  <button class="btn-clear" style="margin-top:6px;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html'">← Weiter einkaufen</button>
   <div class="success" id="successMsg">✓ Vielen Dank! Ihre Bestellung wurde per E-Mail an die Galerie gesendet.</div>
 </div>
+
 <script>
 function loadCart() {
   return JSON.parse(localStorage.getItem('jg_cart') || '[]');
 }
+
 function saveCart(cart) {
   localStorage.setItem('jg_cart', JSON.stringify(cart));
 }
+
 function renderCart() {
   const cart = loadCart();
   const container = document.getElementById('cartContainer');
   const form = document.getElementById('orderForm');
+
   if (cart.length === 0) {
     container.innerHTML = '<div class="empty">🖼️<br><br>Ihr Warenkorb ist leer.<br>Wählen Sie Kunstdrucke auf der Seite "Kunstdrucke".</div>';
     form.style.display = 'none';
     return;
   }
+
   container.innerHTML = '';
   let total = 0;
   cart.forEach((item, i) => {
@@ -91,21 +99,25 @@ function renderCart() {
     `;
     container.appendChild(div);
   });
+
   document.getElementById('totalPrice').textContent = 'EUR ' + total;
   form.style.display = 'block';
 }
+
 function removeItem(index) {
   const cart = loadCart();
   cart.splice(index, 1);
   saveCart(cart);
   renderCart();
 }
+
 function clearCart() {
   if (confirm('Warenkorb wirklich leeren?')) {
     localStorage.removeItem('jg_cart');
     renderCart();
   }
 }
+
 function submitOrder() {
   const name = document.getElementById('fname').value.trim();
   const email = document.getElementById('femail').value.trim();
@@ -131,12 +143,16 @@ function submitOrder() {
   bestellungText += `E-Mail: ${email}\n`;
   bestellungText += `Telefon: ${document.getElementById('ftel').value}\n`;
   bestellungText += `Anmerkungen: ${document.getElementById('fnotes').value}\n`;
+
   window.location.href = `mailto:Axel.emmrich@gmail.com?subject=Bestellung Art Gallery Jonathan&body=${encodeURIComponent(bestellungText)}`;
   document.getElementById('successMsg').style.display = 'block';
 }
+
+// Refresh cart when page becomes visible (user navigates back from Kunstdrucke)
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) renderCart();
 });
+
 renderCart();
 </script>
 </body>
