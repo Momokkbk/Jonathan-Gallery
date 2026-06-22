@@ -3,24 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kunstdrucke</title>
+<title>Kunstdrucke – Art Gallery Jonathan</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #222; padding: 1rem; }
-h1 { font-size: 20px; font-weight: 500; margin-bottom: 1rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+.copyright-header { font-size: 11px; color: #999; margin-bottom: 1rem; }
 .search { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; margin-bottom: 1rem; }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; position: relative; }
 .card:hover { border-color: #378ADD; box-shadow: 0 2px 8px rgba(55,138,221,0.15); }
 .card.selected { border: 2px solid #378ADD; }
-.card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #eee; }
+/* Schutzoverlay über jedem Bild */
+.img-wrapper { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; }
+.img-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; background: #eee; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+.img-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; background: transparent; }
+/* Wasserzeichen */
+.img-watermark { position: absolute; bottom: 4px; right: 6px; font-size: 9px; color: rgba(255,255,255,0.7); font-weight: 500; z-index: 3; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5); user-select: none; -webkit-user-select: none; }
 .card-label { padding: 6px 8px 2px; font-size: 12px; font-weight: 500; }
 .card-price { padding: 0 8px 8px; font-size: 11px; color: #888; }
 .order-panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; display: none; }
 .order-panel.visible { display: block; }
 .order-panel h2 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; }
 .selected-preview { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
-.selected-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+.preview-img-wrap { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+.preview-img-wrap img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+.preview-img-wrap .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; border-radius: 8px; }
+.preview-img-wrap .wm { position: absolute; bottom: 3px; right: 4px; font-size: 8px; color: rgba(255,255,255,0.75); z-index: 3; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.6); user-select: none; }
 .sel-name { font-weight: 500; font-size: 15px; }
 .price-tag { font-size: 20px; font-weight: 500; color: #378ADD; margin-top: 4px; }
 .field { margin-bottom: 0.75rem; }
@@ -29,16 +38,24 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 1rem; }
 .btn { background: #378ADD; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 0.75rem; }
 .btn:hover { background: #185FA5; }
 .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #2e7d32; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.copyright-footer { text-align: center; font-size: 11px; color: #aaa; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; }
 </style>
 </head>
 <body>
+
 <h1>Kunstdrucke</h1>
+<p class="copyright-header">© Art Gallery Jonathan – Alle Rechte vorbehalten</p>
 <input class="search" type="search" placeholder="Bild suchen (z.B. Bild 12)..." oninput="filterGallery(this.value)" />
 <div class="gallery" id="gallery"></div>
+
 <div class="order-panel" id="orderPanel">
   <h2>Format & Preis auswählen</h2>
   <div class="selected-preview">
-    <img id="selImg" src="" alt="" />
+    <div class="preview-img-wrap">
+      <img id="selImg" src="" alt="" />
+      <div class="overlay"></div>
+      <div class="wm">© Jonathan</div>
+    </div>
     <div>
       <div class="sel-name" id="selName"></div>
       <div class="price-tag" id="priceDisplay">EUR 45</div>
@@ -55,10 +72,25 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 1rem; }
   <button class="btn" onclick="addToCart()">🛒 In den Warenkorb</button>
   <button class="btn" style="background:#555;margin-top:8px;" onclick="goToCart()">📋 Zum Warenkorb</button>
 </div>
+
 <div class="toast" id="toast">✓ In den Warenkorb gelegt!</div>
+
+<div class="copyright-footer">
+  © Art Gallery Jonathan – Alle Rechte vorbehalten<br>
+  Unbefugtes Kopieren, Teilen oder Verwenden der Bilder ist nicht gestattet.
+</div>
+
 <script>
+// Kopierschutz
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['s','S','u','U','p','P'].includes(e.key)) e.preventDefault();
+});
+
 const bilder = [
-  { name: "Bild 1", url: "https://momokkbk.github.io/Jonathan-Gallery/IMG_0056.jpeg" },
+  { name: "Bild 1",  url: "https://momokkbk.github.io/Jonathan-Gallery/IMG_0056.jpeg" },
   { name: "Bild 2",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0061.6a319a9b6c8fb3.31396421.jpeg" },
   { name: "Bild 3",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0072.6a319affa70066.25223346.jpeg" },
   { name: "Bild 4",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0119.6a319b68ab26c6.53012199.jpeg" },
@@ -84,8 +116,6 @@ const bilder = [
   { name: "Bild 24", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0125.6a33988e682530.64013020.jpeg" },
   { name: "Bild 25", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0124.6a3398ef905e15.75394332.jpeg" },
   { name: "Bild 26", url: "https://momokkbk.github.io/Jonathan-Gallery/IMG_0063.jpeg" },
-
-
   { name: "Bild 27", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0127.6a33998788b954.06518980.jpeg" },
   { name: "Bild 28", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0154.6a3399d7cfe849.82562591.jpeg" },
   { name: "Bild 29", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0106.6a339a18168b48.44449561.jpeg" },
@@ -154,20 +184,30 @@ const bilder = [
   { name: "Bild 92", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
   { name: "Bild 93", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" }
 ];
+
 let selectedIndex = -1;
 let allCards = [];
+
 function buildGallery() {
   const g = document.getElementById('gallery');
   bilder.forEach((b, i) => {
     const card = document.createElement('div');
     card.className = 'card';
     card.dataset.name = b.name.toLowerCase();
-    card.innerHTML = `<img src="${b.url}" alt="${b.name}" loading="lazy"/><div class="card-label">${b.name}</div><div class="card-price">ab EUR 45</div>`;
+    card.innerHTML = `
+      <div class="img-wrapper">
+        <img src="${b.url}" alt="${b.name}" loading="lazy"/>
+        <div class="img-overlay"></div>
+        <div class="img-watermark">© Jonathan</div>
+      </div>
+      <div class="card-label">${b.name}</div>
+      <div class="card-price">ab EUR 45</div>`;
     card.onclick = () => selectBild(i, card);
     g.appendChild(card);
     allCards.push(card);
   });
 }
+
 function selectBild(i, card) {
   allCards.forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
@@ -179,14 +219,17 @@ function selectBild(i, card) {
   document.getElementById('orderPanel').classList.add('visible');
   document.getElementById('orderPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
+
 function updatePrice() {
   const sel = document.getElementById('formatSelect');
   document.getElementById('priceDisplay').textContent = 'EUR ' + sel.value;
 }
+
 function filterGallery(q) {
   q = q.toLowerCase();
   allCards.forEach(c => { c.style.display = c.dataset.name.includes(q) ? '' : 'none'; });
 }
+
 function addToCart() {
   if (selectedIndex < 0) return;
   const sel = document.getElementById('formatSelect');
@@ -204,9 +247,11 @@ function addToCart() {
   t.style.display = 'block';
   setTimeout(() => { t.style.display = 'none'; }, 2500);
 }
+
 function goToCart() {
   window.location.href = 'https://momokkbk.github.io/Jonathan-Gallery/warenkorb_v2.html';
 }
+
 buildGallery();
 </script>
 </body>
