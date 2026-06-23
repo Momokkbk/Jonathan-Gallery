@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Art Gallery Jonathan</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #111; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; background: #1a1a1a; border-bottom: 1px solid #333; flex-shrink: 0; }
+.header-title { font-size: 14px; font-weight: 500; color: #ccc; }
+.header-counter { font-size: 13px; color: #888; }
+.copyright-badge { font-size: 10px; color: #555; }
+
+/* Hauptbild-Bereich */
+.main-view { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.main-img-wrap { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.main-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+.main-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+.main-watermark { position: absolute; bottom: 12px; right: 12px; font-size: 12px; color: rgba(255,255,255,0.4); z-index: 3; pointer-events: none; user-select: none; }
+.main-title { position: absolute; bottom: 12px; left: 12px; font-size: 13px; color: rgba(255,255,255,0.7); z-index: 3; pointer-events: none; background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 4px; }
+
+/* Pfeil-Navigation */
+.nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 4; background: rgba(0,0,0,0.5); border: none; color: #fff; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.nav-btn:hover { background: rgba(55,138,221,0.7); }
+.nav-prev { left: 10px; }
+.nav-next { right: 10px; }
+
+/* Bestell-Button */
+.order-btn { position: absolute; top: 12px; right: 12px; z-index: 4; background: #378ADD; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.order-btn:hover { background: #185FA5; }
+
+/* Thumbnail-Leiste */
+.thumb-bar { height: 75px; background: #1a1a1a; border-top: 1px solid #333; display: flex; align-items: center; padding: 6px 8px; overflow-x: auto; overflow-y: hidden; gap: 6px; flex-shrink: 0; scrollbar-width: none; }
+.thumb-bar::-webkit-scrollbar { display: none; }
+.thumb { width: 56px; height: 56px; flex-shrink: 0; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; position: relative; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; -webkit-user-select: none; display: block; }
+.thumb-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+.thumb.active { border-color: #378ADD; }
+.thumb:hover { border-color: #888; }
+.thumb-nr { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 9px; color: rgba(255,255,255,0.8); z-index: 3; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">Art Gallery Jonathan</div>
+  <div class="header-counter" id="counter">Bild 1 / 93</div>
+  <div class="copyright-badge">© Alle Rechte vorbehalten</div>
+</div>
+
+<!-- Hauptbild -->
+<div class="main-view">
+  <div class="main-img-wrap">
+    <img id="mainImg" src="" alt="" />
+    <div class="main-overlay"></div>
+    <div class="main-watermark">© Art Gallery Jonathan</div>
+    <div class="main-title" id="mainTitle">Bild 1</div>
+  </div>
+  <button class="nav-btn nav-prev" onclick="navigate(-1)">‹</button>
+  <button class="nav-btn nav-next" onclick="navigate(1)">›</button>
+  <button class="order-btn" onclick="goToShop()">🛒 Bestellen</button>
+</div>
+
+<!-- Thumbnail-Leiste -->
+<div class="thumb-bar" id="thumbBar"></div>
+
+<script>
+// Kopierschutz
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && ['s','S','u','U','p','P'].includes(e.key)) e.preventDefault();
+});
+
+const bilder = [
+  { name: "Bild 1",  url: "https://momokkbk.github.io/Jonathan-Gallery/IMG_0056.jpeg" },
+  { name: "Bild 2",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0061.6a319a9b6c8fb3.31396421.jpeg" },
+  { name: "Bild 3",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0072.6a319affa70066.25223346.jpeg" },
+  { name: "Bild 4",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0119.6a319b68ab26c6.53012199.jpeg" },
+  { name: "Bild 5",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0118.6a319bf0a03955.15932110.jpeg" },
+  { name: "Bild 6",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0134.6a319cb2475598.58774319.jpeg" },
+  { name: "Bild 7",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0117.6a31b146e4c9b8.86151282.jpeg" },
+  { name: "Bild 8",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0116.6a31b19a89e8b3.64300387.jpeg" },
+  { name: "Bild 9",  url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0093.6a31b209a79c46.32025995.jpeg" },
+  { name: "Bild 10", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0172.6a31b2c4e72fa7.30169012.jpeg" },
+  { name: "Bild 11", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0161.6a31b3406a1919.36067854.jpeg" },
+  { name: "Bild 12", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0164.6a31b3a6101492.74180443.jpeg" },
+  { name: "Bild 13", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0160.6a31b3f6e45e81.49224402.jpeg" },
+  { name: "Bild 14", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0159.6a31b44f9474d0.86766225.jpeg" },
+  { name: "Bild 15", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0163.6a31b4a20aed99.57032442.jpeg" },
+  { name: "Bild 16", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0165.6a31b4f5d4f252.96211630.jpeg" },
+  { name: "Bild 17", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0157.6a31b53cbc15d8.86973229.jpeg" },
+  { name: "Bild 18", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0155.6a31b58e1c5522.03786229.jpeg" },
+  { name: "Bild 19", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0122.6a31b5d5d1aab1.61770064.jpeg" },
+  { name: "Bild 20", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0121.6a339705e70b77.80776834.jpeg" },
+  { name: "Bild 21", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0120.6a339785af3593.68917884.jpeg" },
+  { name: "Bild 22", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0085.6a3397dd7bb830.67420226.jpeg" },
+  { name: "Bild 23", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0059.6a33983e90a116.29877685.jpeg" },
+  { name: "Bild 24", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0125.6a33988e682530.64013020.jpeg" },
+  { name: "Bild 25", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0124.6a3398ef905e15.75394332.jpeg" },
+  { name: "Bild 26", url: "https://momokkbk.github.io/Jonathan-Gallery/IMG_0063.jpeg" },
+  { name: "Bild 27", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0127.6a33998788b954.06518980.jpeg" },
+  { name: "Bild 28", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0154.6a3399d7cfe849.82562591.jpeg" },
+  { name: "Bild 29", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0106.6a339a18168b48.44449561.jpeg" },
+  { name: "Bild 30", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0128.6a339a5f485181.51367104.jpeg" },
+  { name: "Bild 31", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0099.6a339b02149522.02306628.jpeg" },
+  { name: "Bild 32", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0130.6a339b507c8008.56773202.jpeg" },
+  { name: "Bild 33", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0138.6a339b940cf5e3.70301149.jpeg" },
+  { name: "Bild 34", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0136.6a339bf6074492.45213871.jpeg" },
+  { name: "Bild 35", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0067.6a339c47026dd0.17260041.jpeg" },
+  { name: "Bild 36", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0060.6a339c92c3ccb0.33432903.jpeg" },
+  { name: "Bild 37", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0151.6a339ccfa30205.05152918.jpeg" },
+  { name: "Bild 38", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0066.6a339d306192b1.92154337.jpeg" },
+  { name: "Bild 39", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0065.6a339d95084454.64598940.jpeg" },
+  { name: "Bild 40", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0087.6a339ddd9e8a14.53974908.jpeg" },
+  { name: "Bild 41", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0143.6a339e3b2a7f97.91005549.jpeg" },
+  { name: "Bild 42", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0142.6a339e705fb996.11019959.jpeg" },
+  { name: "Bild 43", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0148.6a339eefe49af0.33345191.jpeg" },
+  { name: "Bild 44", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0147.6a339f2b6f6d87.21664070.jpeg" },
+  { name: "Bild 45", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0146.6a339f6f64f410.85547856.jpeg" },
+  { name: "Bild 46", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0145.6a339fb932f174.80653533.jpeg" },
+  { name: "Bild 47", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0144.6a33a006d5b0f6.95340464.jpeg" },
+  { name: "Bild 48", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0133.6a33a04451ec95.26401042.jpeg" },
+  { name: "Bild 49", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0058.6a33a092ae3be4.89353812.jpeg" },
+  { name: "Bild 50", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0083.6a33a0ffde2d57.59092932.jpeg" },
+  { name: "Bild 51", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0177.6a33a15e3657b1.97638799.jpeg" },
+  { name: "Bild 52", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0064.6a33a1bd4eb181.64860996.jpeg" },
+  { name: "Bild 53", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0126.6a33a204875a01.35868965.jpeg" },
+  { name: "Bild 54", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0051.6a33a2418eadd3.08930049.jpeg" },
+  { name: "Bild 55", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0084.6a33a289bdd2b1.47533750.jpeg" },
+  { name: "Bild 56", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0069.6a33a33c1da0b9.61351609.jpeg" },
+  { name: "Bild 57", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0115.6a33a38d9d7a28.85574931.jpeg" },
+  { name: "Bild 58", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0131.6a33a3cd1c5364.42191159.jpeg" },
+  { name: "Bild 59", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0139.6a33a40a329ca7.44180341.jpeg" },
+  { name: "Bild 60", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0173.6a33a4423833f5.97937938.jpeg" },
+  { name: "Bild 61", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0176.6a33a49bc42bd4.49525729.jpeg" },
+  { name: "Bild 62", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0175.6a33a4e2138d65.46606483.jpeg" },
+  { name: "Bild 63", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0174.6a33a51a6ade70.77544563.jpeg" },
+  { name: "Bild 64", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0068.6a33a551cfa7f5.49065615.jpeg" },
+  { name: "Bild 65", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0135.6a33a5afa8e095.18596689.jpeg" },
+  { name: "Bild 66", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0110.6a33a6042995b0.96568491.jpeg" },
+  { name: "Bild 67", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0104.6a33a642a97bb9.46289264.jpeg" },
+  { name: "Bild 68", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0132.6a33a67db4d1f1.98072443.jpeg" },
+  { name: "Bild 69", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0162.6a33a6b4458527.85293871.jpeg" },
+  { name: "Bild 70", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0109.6a33a6f81496f3.96179830.jpeg" },
+  { name: "Bild 71", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0112.6a33a740a4a561.76481331.jpeg" },
+  { name: "Bild 72", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0092.6a33a78e044529.29493337.jpeg" },
+  { name: "Bild 73", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0111.6a33a7d8862f40.08595397.jpeg" },
+  { name: "Bild 74", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0113.6a33a83d540172.45221122.jpeg" },
+  { name: "Bild 75", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0114.6a33a8ca1e04c8.12893577.jpeg" },
+  { name: "Bild 76", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0086.6a33a908046330.66882278.jpeg" },
+  { name: "Bild 77", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0149.6a33a9a96e1747.36169159.jpeg" },
+  { name: "Bild 78", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0098.6a33a9e4a15a90.86619330.jpeg" },
+  { name: "Bild 79", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0091.6a33aa5017dff7.45424908.jpeg" },
+  { name: "Bild 80", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0573.6a33ac44133d11.79027842.jpeg" },
+  { name: "Bild 81", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 82", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0594.6a33aca28a8b28.40788264.jpeg" },
+  { name: "Bild 83", url: "https://www.jotform.com/uploads/axelemmrich/form_files/EF920B24-2EB7-492C-881A-EA132FEB14D8.6a33ad6063dcd7.20255582.jpeg" },
+  { name: "Bild 84", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0550.6a33ae1d34b469.00791064.png" },
+  { name: "Bild 85", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 86", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 87", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 88", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 89", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 90", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 91", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 92", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" },
+  { name: "Bild 93", url: "https://www.jotform.com/uploads/axelemmrich/form_files/IMG_0410.6a33ace528d233.93849454.jpeg" }
+];
+
+let current = 0;
+
+function showBild(i) {
+  current = i;
+  document.getElementById('mainImg').src = bilder[i].url;
+  document.getElementById('mainTitle').textContent = bilder[i].name;
+  document.getElementById('counter').textContent = bilder[i].name + ' / ' + bilder.length;
+
+  // Thumbnails aktualisieren
+  document.querySelectorAll('.thumb').forEach((t, idx) => {
+    t.classList.toggle('active', idx === i);
+  });
+
+  // Aktives Thumbnail in Sicht scrollen
+  const bar = document.getElementById('thumbBar');
+  const active = bar.querySelectorAll('.thumb')[i];
+  if (active) active.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+}
+
+function navigate(dir) {
+  let next = current + dir;
+  if (next < 0) next = bilder.length - 1;
+  if (next >= bilder.length) next = 0;
+  showBild(next);
+}
+
+function goToShop() {
+  const bild = bilder[current].name;
+  sessionStorage.setItem('selectedBild', bild);
+  sessionStorage.setItem('selectedImg', bilder[current].url);
+  window.location.href = 'https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html';
+}
+
+function buildThumbs() {
+  const bar = document.getElementById('thumbBar');
+  bilder.forEach((b, i) => {
+    const t = document.createElement('div');
+    t.className = 'thumb' + (i === 0 ? ' active' : '');
+    t.innerHTML = `
+      <img src="${b.url}" alt="${b.name}" loading="lazy" />
+      <div class="thumb-overlay"></div>
+      <div class="thumb-nr">${i+1}</div>`;
+    t.onclick = () => showBild(i);
+    bar.appendChild(t);
+  });
+}
+
+// Swipe-Geste
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) navigate(diff > 0 ? 1 : -1);
+});
+
+buildThumbs();
+showBild(0);
+</script>
+</body>
+</html>
