@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Warenkorb – Art Gallery Jonathan</title>
+<title>Warenkorb</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #222; padding: 1rem; }
 h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
 .empty { text-align: center; color: #999; padding: 3rem 1rem; font-size: 15px; }
 .cart-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; display: flex; gap: 12px; align-items: center; }
-.cart-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; pointer-events: none; }
+.cart-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
 .item-info { flex: 1; }
 .item-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
 .item-format { font-size: 13px; color: #666; margin-bottom: 4px; }
@@ -26,50 +26,22 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
 .field input, .field textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; }
 .field textarea { min-height: 70px; resize: vertical; }
 .row2 { display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; }
-
-/* Zahlungsoptionen */
-.payment-section { margin-bottom: 1rem; }
-.payment-title { font-size: 14px; font-weight: 500; color: #555; margin-bottom: 0.75rem; }
-.payment-options { display: flex; flex-direction: column; gap: 0.5rem; }
-.payment-option { background: #fff; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: border-color 0.15s; }
-.payment-option:hover { border-color: #378ADD; }
-.payment-option.selected { border-color: #378ADD; background: #f0f7ff; }
-.payment-option input[type=radio] { accent-color: #378ADD; width: 18px; height: 18px; flex-shrink: 0; }
-.payment-icon { font-size: 22px; flex-shrink: 0; }
-.payment-info { flex: 1; }
-.payment-name { font-size: 14px; font-weight: 500; }
-.payment-desc { font-size: 11px; color: #888; margin-top: 2px; }
-
-/* Zahlungsdetails */
-.payment-detail { display: none; background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.5rem; font-size: 13px; line-height: 1.7; }
-.payment-detail.visible { display: block; }
-.payment-detail strong { color: #222; }
-.sepa-fields { margin-top: 0.75rem; }
-
 .btn { background: #378ADD; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 0.5rem; }
 .btn:hover { background: #185FA5; }
-.btn-paypal { background: #003087; }
-.btn-paypal:hover { background: #001f5b; }
 .btn-clear { background: none; border: 1px solid #ddd; color: #999; border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-.btn-clear:hover { border-color: #999; color: #333; }
-.btn-widerruf { background: none; border: 1px solid #e53935; color: #e53935; border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-.btn-widerruf:hover { background: #fdecea; }
-
-.success { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 1rem; margin-top: 1rem; color: #2e7d32; display: none; font-size: 14px; text-align: center; line-height: 1.6; }
+.btn-clear:hover { border-color: #e53935; color: #e53935; }
+.success { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 1rem; margin-top: 1rem; color: #2e7d32; display: none; font-size: 14px; text-align: center; }
 </style>
 </head>
 <body>
 <h1>🛒 Warenkorb</h1>
 <div id="cartContainer"></div>
-
 <div id="orderForm" style="display:none">
   <hr class="divider">
   <div class="total-row">
     <span>Gesamtbetrag</span>
     <span class="total-price" id="totalPrice">EUR 0</span>
   </div>
-
-  <!-- Kontaktdaten -->
   <p class="section-title">Ihre Kontaktdaten</p>
   <div class="field"><label>Name *</label><input type="text" id="fname" placeholder="Vollständiger Name" /></div>
   <div class="row2">
@@ -80,96 +52,20 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
   <div class="field"><label>E-Mail *</label><input type="email" id="femail" placeholder="E-Mail-Adresse" /></div>
   <div class="field"><label>Telefon</label><input type="tel" id="ftel" placeholder="+49" /></div>
   <div class="field"><label>Anmerkungen</label><textarea id="fnotes" placeholder="Weitere Wünsche oder Hinweise"></textarea></div>
-
-  <hr class="divider">
-
-  <!-- Zahlungsoptionen -->
-  <div class="payment-section">
-    <p class="payment-title">Zahlungsart wählen *</p>
-    <div class="payment-options">
-
-      <!-- PayPal -->
-      <label class="payment-option" onclick="selectPayment('paypal')">
-        <input type="radio" name="payment" value="paypal" />
-        <div class="payment-icon">🅿️</div>
-        <div class="payment-info">
-          <div class="payment-name">PayPal</div>
-          <div class="payment-desc">Schnell & sicher – Weiterleitung zu PayPal</div>
-        </div>
-      </label>
-      <div class="payment-detail" id="detail-paypal">
-        Sie werden nach der Bestellung zu <strong>PayPal</strong> weitergeleitet.<br>
-        Empfänger: <strong>axelemmrich@freenet.de</strong><br>
-        Der Betrag wird direkt über PayPal abgewickelt.
-      </div>
-
-      <!-- SEPA Lastschrift -->
-      <label class="payment-option" onclick="selectPayment('sepa')">
-        <input type="radio" name="payment" value="sepa" />
-        <div class="payment-icon">🏦</div>
-        <div class="payment-info">
-          <div class="payment-name">SEPA-Lastschrift</div>
-          <div class="payment-desc">Bankeinzug von Ihrem Konto</div>
-        </div>
-      </label>
-      <div class="payment-detail" id="detail-sepa">
-        Bitte geben Sie Ihre Bankdaten für den SEPA-Einzug an:
-        <div class="sepa-fields">
-          <div class="field"><label>Kontoinhaber *</label><input type="text" id="sepa-name" placeholder="Vor- und Nachname" /></div>
-          <div class="field"><label>IBAN *</label><input type="text" id="sepa-iban" placeholder="DE00 0000 0000 0000 0000 00" /></div>
-          <div class="field"><label>BIC</label><input type="text" id="sepa-bic" placeholder="z.B. DUISDE33XXX" /></div>
-        </div>
-        Mit Absenden erteilen Sie Art Gallery Jonathan ein SEPA-Lastschriftmandat.
-      </div>
-
-      <!-- Überweisung -->
-      <label class="payment-option" onclick="selectPayment('ueberweisung')">
-        <input type="radio" name="payment" value="ueberweisung" />
-        <div class="payment-icon">💳</div>
-        <div class="payment-info">
-          <div class="payment-name">Banküberweisung</div>
-          <div class="payment-desc">Überweisen Sie nach Bestelleingang</div>
-        </div>
-      </label>
-      <div class="payment-detail" id="detail-ueberweisung">
-        Bitte überweisen Sie den Betrag nach Bestelleingang an:<br><br>
-        <strong>Empfänger:</strong> Axel Emmrich<br>
-        <strong>Bank:</strong> Sparkasse Duisburg<br>
-        <strong>IBAN:</strong> DE39 3505 0000 0309 0547 40<br>
-        <strong>BIC:</strong> DUISDE33XXX<br><br>
-        Bitte geben Sie als Verwendungszweck Ihren Namen und das bestellte Bild an.<br>
-        Die Ware wird nach Zahlungseingang versandt.
-      </div>
-
-    </div>
-  </div>
-
   <button class="btn" onclick="submitOrder()">✉️ Verbindlich bestellen</button>
   <button class="btn-clear" onclick="clearCart()">Warenkorb leeren</button>
-  <button class="btn-clear" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html'">← Weiter einkaufen</button>
-  <hr class="divider">
-  <button class="btn-widerruf" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/widerruf.html'">⚠️ Vertrag widerrufen</button>
-  <div class="success" id="successMsg"></div>
+  <button class="btn-clear" style="margin-top:6px;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html'">← Weiter einkaufen</button>
+  <hr style="border:none;border-top:1px solid #e0e0e0;margin:1rem 0;">
+  <button class="btn-clear" style="margin-top:0;border-color:#e53935;color:#e53935;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/widerruf.html'">⚠️ Vertrag widerrufen</button>
+  <button class="btn-clear" style="margin-top:6px;" onclick="window.location.href='https://momokkbk.github.io/Jonathan-Gallery/kunstdrucke_v3%203.html'">← Weiter einkaufen</button>
+  <div class="success" id="successMsg">✓ Vielen Dank! Ihre Bestellung wurde per E-Mail an die Galerie gesendet.</div>
 </div>
 
 <script>
-let selectedPayment = '';
-
-function selectPayment(method) {
-  selectedPayment = method;
-  document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
-  document.querySelectorAll('.payment-detail').forEach(d => d.classList.remove('visible'));
-  const selected = document.querySelector(`input[value="${method}"]`);
-  if (selected) {
-    selected.checked = true;
-    selected.closest('.payment-option').classList.add('selected');
-  }
-  document.getElementById('detail-' + method).classList.add('visible');
-}
-
 function loadCart() {
   return JSON.parse(localStorage.getItem('jg_cart') || '[]');
 }
+
 function saveCart(cart) {
   localStorage.setItem('jg_cart', JSON.stringify(cart));
 }
@@ -178,11 +74,13 @@ function renderCart() {
   const cart = loadCart();
   const container = document.getElementById('cartContainer');
   const form = document.getElementById('orderForm');
+
   if (cart.length === 0) {
     container.innerHTML = '<div class="empty">🖼️<br><br>Ihr Warenkorb ist leer.<br>Wählen Sie Kunstdrucke auf der Seite "Kunstdrucke".</div>';
     form.style.display = 'none';
     return;
   }
+
   container.innerHTML = '';
   let total = 0;
   cart.forEach((item, i) => {
@@ -197,9 +95,11 @@ function renderCart() {
         <div class="item-format">Format: ${item.format}</div>
         <div class="item-price">${item.preis}</div>
       </div>
-      <button class="remove-btn" onclick="removeItem(${i})" title="Entfernen">×</button>`;
+      <button class="remove-btn" onclick="removeItem(${i})" title="Entfernen">×</button>
+    `;
     container.appendChild(div);
   });
+
   document.getElementById('totalPrice').textContent = 'EUR ' + total;
   form.style.display = 'block';
 }
@@ -224,24 +124,13 @@ function submitOrder() {
   const plz = document.getElementById('fplz').value.trim();
   const strasse = document.getElementById('fstrasse').value.trim();
   const stadt = document.getElementById('fstadt').value.trim();
-
   if (!name || !email || !plz || !strasse || !stadt) {
     alert('Bitte füllen Sie alle Pflichtfelder aus (Name, Adresse, E-Mail).'); return;
   }
-  if (!selectedPayment) {
-    alert('Bitte wählen Sie eine Zahlungsart aus.'); return;
-  }
-  if (selectedPayment === 'sepa') {
-    const sepaName = document.getElementById('sepa-name').value.trim();
-    const sepaIban = document.getElementById('sepa-iban').value.trim();
-    if (!sepaName || !sepaIban) {
-      alert('Bitte füllen Sie die SEPA-Felder aus.'); return;
-    }
-  }
-
   const cart = loadCart();
+  let bestellungText = `Bestellung – Art Gallery Jonathan\n\n`;
+  bestellungText += `=== BESTELLTE KUNSTDRUCKE ===\n`;
   let total = 0;
-  let bestellungText = `Bestellung – Art Gallery Jonathan\n\n=== BESTELLTE KUNSTDRUCKE ===\n`;
   cart.forEach(item => {
     const price = parseInt(item.preis.replace('EUR ', ''));
     total += price;
@@ -249,57 +138,21 @@ function submitOrder() {
   });
   bestellungText += `\nGesamtbetrag: EUR ${total}\n`;
   bestellungText += `\n=== KUNDENDATEN ===\n`;
-  bestellungText += `Name: ${name}\nAdresse: ${strasse}, ${plz} ${stadt}\n`;
-  bestellungText += `E-Mail: ${email}\nTelefon: ${document.getElementById('ftel').value}\n`;
+  bestellungText += `Name: ${name}\n`;
+  bestellungText += `Adresse: ${strasse}, ${plz} ${stadt}\n`;
+  bestellungText += `E-Mail: ${email}\n`;
+  bestellungText += `Telefon: ${document.getElementById('ftel').value}\n`;
   bestellungText += `Anmerkungen: ${document.getElementById('fnotes').value}\n`;
-  bestellungText += `\n=== ZAHLUNGSART ===\n`;
 
-  const paymentLabels = { paypal: 'PayPal', sepa: 'SEPA-Lastschrift', ueberweisung: 'Banküberweisung' };
-  bestellungText += paymentLabels[selectedPayment] + '\n';
-
-  if (selectedPayment === 'sepa') {
-    bestellungText += `IBAN: ${document.getElementById('sepa-iban').value}\nBIC: ${document.getElementById('sepa-bic').value}\n`;
-  }
-
-  // E-Mail senden
   window.location.href = `mailto:Axel.emmrich@gmail.com?subject=Bestellung Art Gallery Jonathan&body=${encodeURIComponent(bestellungText)}`;
-
-  // Nach Bezahlung weiterleiten
-  setTimeout(() => {
-    if (selectedPayment === 'paypal') {
-      const encodedName = encodeURIComponent('Kunstdruck Art Gallery Jonathan');
-      window.open(`https://www.paypal.com/paypalme/axelemmrichfreenet/${total}EUR`, '_blank');
-    }
-    // Warenkorb zurücksetzen und zurück zum Warenkorb
-    localStorage.removeItem('jg_cart');
-    document.getElementById('successMsg').style.display = 'block';
-    document.getElementById('successMsg').innerHTML = getSuccessMessage(selectedPayment, total);
-    document.getElementById('successMsg').scrollIntoView({behavior: 'smooth'});
-    document.getElementById('orderForm').style.display = 'none';
-    // Zurück-Button anzeigen
-    showReturnButton();
-  }, 1000);
+  document.getElementById('successMsg').style.display = 'block';
 }
 
-function getSuccessMessage(method, total) {
-  const msgs = {
-    paypal: `✓ Bestellung eingegangen!<br><br>Sie wurden zu <strong>PayPal</strong> weitergeleitet.<br>Bitte schließen Sie die Zahlung von <strong>EUR ${total}</strong> dort ab.<br><br>Empfänger: axelemmrich@freenet.de`,
-    sepa: `✓ Bestellung eingegangen!<br><br>Ihr <strong>SEPA-Lastschriftmandat</strong> wurde erteilt.<br>Der Betrag von <strong>EUR ${total}</strong> wird von Ihrem Konto eingezogen.<br><br>Sie erhalten eine Bestätigung per E-Mail.`,
-    ueberweisung: `✓ Bestellung eingegangen!<br><br>Bitte überweisen Sie <strong>EUR ${total}</strong> an:<br><br>Empfänger: Axel Emmrich<br>IBAN: DE39 3505 0000 0309 0547 40<br>BIC: DUISDE33XXX<br>Sparkasse Duisburg<br><br>Verwendungszweck: Ihr Name + Bildnummer`
-  };
-  return msgs[method] || '✓ Bestellung eingegangen!';
-}
+// Refresh cart when page becomes visible (user navigates back from Kunstdrucke)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) renderCart();
+});
 
-function showReturnButton() {
-  const btn = document.createElement('button');
-  btn.className = 'btn';
-  btn.style.marginTop = '1rem';
-  btn.textContent = '← Zurück zum Warenkorb';
-  btn.onclick = () => { window.location.href = 'https://momokkbk.github.io/Jonathan-Gallery/warenkorb_v2.html'; };
-  document.getElementById('successMsg').after(btn);
-}
-
-document.addEventListener('visibilitychange', () => { if (!document.hidden) renderCart(); });
 renderCart();
 </script>
 </body>
