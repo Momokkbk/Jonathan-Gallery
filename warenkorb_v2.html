@@ -268,8 +268,13 @@ function submitOrder() {
   document.getElementById('orderForm').style.display = 'none';
   showReturnButton();
 
-  // Warenkorb leeren
-  localStorage.removeItem('jg_cart');
+  // mailto direkt als versteckter Link auslösen
+  const a = document.createElement('a');
+  a.href = `mailto:Axel.emmrich@gmail.com?subject=Bestellung Art Gallery Jonathan&body=${encodeURIComponent(bestellungText)}`;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function getSuccessMessage(method, total, bestellungText) {
@@ -318,12 +323,8 @@ function getSuccessMessage(method, total, bestellungText) {
 }
 
 function showReturnButton() {
-  const btn = document.createElement('button');
-  btn.className = 'btn';
-  btn.style.marginTop = '1rem';
-  btn.textContent = '← Zurück zum Warenkorb';
-  btn.onclick = () => { window.location.href = 'https://momokkbk.github.io/Jonathan-Gallery/warenkorb_v2.html'; };
-  document.getElementById('successMsg').after(btn);
+  // Return button is already included in getSuccessMessage links
+  // This function is kept for compatibility
 }
 
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderCart(); });
